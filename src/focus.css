@@ -2,18 +2,21 @@
 :root{--blue:#044794;--blue-deep:#032f66;--blue-soft:#e8eef8;--ink:#1b2433;--muted:#566176;--bg:#f5f6fa;--card:#fff;--line:#e3e7ef;--sun:#f6c445;--sun-soft:#fff6dc;--leaf:#2f9e6a;--leaf-soft:#e3f5ec;--font:Montserrat,system-ui,-apple-system,sans-serif;--safe:env(safe-area-inset-bottom,0px);--radius:22px;font-size:16px;color-scheme:light}
 html[data-text=large]{font-size:18.5px}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{background:var(--blue) radial-gradient(circle,rgba(255,255,255,.14) 1px,transparent 1.5px) 0 0/22px 22px;color:var(--ink);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+/* Native-app shell: the page never scrolls, bounces or zooms; only the sheet inside scrolls */
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;background:var(--blue);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;color:var(--ink);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
+button{cursor:pointer;touch-action:manipulation;transition:opacity .12s}
+button:active:not(:disabled){opacity:.72}
+input,textarea{-webkit-user-select:text;user-select:text}
+*{scrollbar-width:none}
+::-webkit-scrollbar{display:none}
 svg{width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 [hidden]{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 
-.app{position:relative;display:flex;flex-direction:column;width:100%;max-width:430px;height:100dvh;margin:0 auto;overflow:hidden;background:var(--bg)}
-@media (min-width:520px){.app{height:min(900px,calc(100dvh - 48px));margin-top:24px;border-radius:38px;box-shadow:0 40px 90px rgba(0,10,40,.45),0 0 0 10px rgba(255,255,255,.08)}}
-
+.app{position:relative;display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;overflow:hidden;background:var(--bg)}
 /* Header: the clock and how much day is left are always in view */
 .top{display:flex;flex:none;align-items:center;justify-content:space-between;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 26px;background:var(--blue);color:#fff}
 .top-logo{display:block;width:104px;height:auto}
@@ -334,3 +337,11 @@ textarea:focus{border-color:var(--blue);background:#fff}
 /* Calm motion: the in-app switch and the system setting both turn movement off */
 html[data-motion=off] *,html[data-motion=off] *:before,html[data-motion=off] *:after{animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Tablets and wide screens stay full-bleed edge to edge; only the content column is held to a readable width */
+@media (min-width:640px){
+  .top,.tabbar,.focus{padding-left:calc((100% - 560px)/2);padding-right:calc((100% - 560px)/2)}
+  .sheet{padding-left:calc((100% - 528px)/2);padding-right:calc((100% - 528px)/2)}
+  .modal-sheet{left:calc((100% - 600px)/2);right:calc((100% - 600px)/2)}
+  .toast{left:calc((100% - 528px)/2);right:calc((100% - 528px)/2)}
+}
