@@ -110,6 +110,19 @@
         </div>
       </section>
 
+      <div class="modal" id="shield-picker" hidden>
+        <div class="modal-scrim"></div>
+        <section class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="picker-title" tabindex="-1">
+          <span class="grabber" aria-hidden="true"></span>
+          <header class="modal-head"><h2 id="picker-title">Which apps pull you away?</h2><button type="button" class="icon-button" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button></header>
+          <p class="lead">Filo picked the usual suspects from your screen time. Locked apps open only with time you’ve earned.</p>
+          <ul class="picker-list"></ul>
+          <button type="button" class="primary picker-save">Lock apps</button>
+        </section>
+      </div>
+
+      <div class="shield-layer" id="shield-layer" hidden></div>
+
       <div class="toast" id="toast" role="status" hidden><span class="toast-text"></span><button type="button" class="toast-undo">Undo</button></div>
     </div>
     <script type="module" src="/src/main.js"></script>

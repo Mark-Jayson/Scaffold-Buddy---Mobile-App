@@ -28,6 +28,7 @@ The build writes static files to `dist/`. On Vercel, import this repo and keep t
 - **Capture:** talk (browser speech recognition) or type. Filo splits the dump into tasks, ideas and thoughts, and picks up days, times and durations.
 - **Plan:** a Top 3 cap, a timeline whose blocks are sized by duration with labelled free time, a "Now" line, and a "Maybe later" list with no dates.
 - **Kind by default:** nothing is red or "overdue". Older tasks are **carried over** with one-tap Today, Tomorrow or Later. Every change can be undone. There are no streaks; it counts the "days you showed up" instead.
+- **Focus Shield:** lock distracting apps such as social media and games, see today's screen time against your daily average, and earn unlock time by finishing work (+10 min per task, +2 per small step). Opening a locked app shows Filo's lock screen, where earned minutes unlock it for 5, 10 or 15 minutes. This is a front-end simulation: the Screen Time permission, app list and usage numbers are sample data, and a native build would use Screen Time (iOS) or UsageStats (Android). "Reset Focus Shield demo" at the bottom of the page starts the flow again.
 - **Make it yours:** settings for calm motion, sounds, larger text, focus length and when your day ends.
 
 ## Code layout
@@ -35,5 +36,6 @@ The build writes static files to `dist/`. On Vercel, import this repo and keep t
 - `index.html` has the app shell, tab bar, sheets and focus mode markup.
 - `src/main.js` holds the views and interactions, and `src/focus.css` the styles.
 - `src/breakdown.js` suggests small steps, `src/sorter.js` splits and classifies captures and parses dates and times, and `src/filo.js` draws and animates Filo.
+- `src/shield.js` runs Focus Shield: locked apps, screen time, unlock credit and the lock screen.
 - `src/seed.js` creates the sample data.
 - `public/` holds the web app manifest and icons, so the app can be installed to the home screen.

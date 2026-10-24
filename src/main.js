@@ -4,6 +4,7 @@ import { filoSvg, react, setMood, hearts } from './filo.js';
 import { sort, tagOf, moodOf } from './sorter.js';
 import { breakDown, energyOf } from './breakdown.js';
 import { seed, isoDate, addDays } from './seed.js';
+import { createShield } from './shield.js';
 
 /* ---------- State (autosaved on every change) ---------- */
 const STORAGE_KEY = 'scaffold.focus.v1';
@@ -79,6 +80,8 @@ const ICONS = {
   heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
   sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
   park: '<path d="M5 20V5h7a4.5 4.5 0 0 1 0 9H5"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  unlock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.7"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 const ENERGY = { low: ['Low', 'battery'], medium: ['Okay', 'smile'], high: ['High', 'bolt'] };
@@ -86,6 +89,9 @@ const ring = (fraction, size = 120, stroke = 10) => {
   const radius = (size - stroke) / 2, length = 2 * Math.PI * radius;
   return `<svg class="ring" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size / 2}" cy="${size / 2}" r="${radius}" stroke-width="${stroke}"/><circle class="ring-fill" cx="${size / 2}" cy="${size / 2}" r="${radius}" stroke-width="${stroke}" stroke-dasharray="${length}" stroke-dashoffset="${length * (1 - Math.max(0, Math.min(1, fraction)))}"/></svg>`;
 };
+
+/* ---------- Focus Shield: locked apps, screen time and unlock credit (src/shield.js) ---------- */
+const shield = createShield({ state, save, render, toast, celebrate, filoSvg, setMood, esc, icon, openModal, closeModal, go, $ });
 
 /* ---------- Choosing "now": one task, chosen for the moment ---------- */
 function pickNow() {
@@ -119,7 +125,7 @@ function renderTop() {
   top.innerHTML = `
     <img class="top-logo" src="/title.webp" alt="Scaffold" width="2000" height="494" />
     <div class="top-time">
-      <span class="top-clock">${clock(now)}</span>
+      <span class="top-clock-row">${shield.chip()}<span class="top-clock">${clock(now)}</span></span>
       <span class="day-left" title="Time left before your day ends at ${clock(end)}"><span class="day-left-bar"><span style="width:${Math.round(fraction * 100)}%"></span></span>${left ? `${span(left)} left today` : 'Day’s done'}</span>
     </div>`;
 }
@@ -180,6 +186,7 @@ function renderNow() {
       <div class="progress-dots" aria-label="${done.length} of ${today.length} done today">${today.map(task => `<span class="${task.done ? 'is-done' : ''}"></span>`).join('')}</div>
       <p>${done.length ? `<strong>${done.length} done</strong> today 🎉` : 'Your first one is the hardest. You’ve got this.'}</p>
     </section>
+    ${shield.nowCard()}
     <section class="filo-row"><button type="button" class="filo-mini" data-action="poke" aria-label="Say hi to Filo">${filoSvg('Filo')}</button><p class="bubble">${esc(filoLine(pick))}</p></section>`;
   setMood(sheet, pick ? 'idle' : 'happy');
 }
@@ -283,7 +290,7 @@ function renderFilo() {
 
 function render() {
   renderTop();
-  ({ now: renderNow, plan: renderPlan, inbox: renderInbox, filo: renderFilo })[view]();
+  ({ now: renderNow, plan: renderPlan, inbox: renderInbox, filo: renderFilo, shield: () => shield.renderView(sheet) })[view]();
   for (const tab of document.querySelectorAll('.tab')) {
     const active = tab.dataset.view === view;
     tab.classList.toggle('is-active', active);
@@ -364,16 +371,18 @@ function complete(task, value = true) {
   const before = snapshot();
   task.done = value;
   task.doneAt = value ? Date.now() : null;
+  let bonus = '';
   if (value) {
     state.sparks += 3;
     markShowedUp();
+    bonus = shield.earn(shield.EARN_TASK);
   }
   save();
   render();
   if (value) {
     const left = tasksOn(todayIso()).filter(item => !item.done).length;
     celebrate(true);
-    toast(left ? `Done! +3 sparks ✨` : 'Everything for today is done! 🎉', () => restore(before));
+    toast(left ? `Done! +3 sparks ✨${bonus}` : `Everything for today is done! 🎉${bonus}`, () => restore(before));
   }
 }
 function move(tasks, where, label) {
@@ -470,6 +479,8 @@ details.addEventListener('click', event => {
       state.sparks += 1;
       markShowedUp();
       react(details, 'is-bounce');
+      const bonus = shield.earn(shield.EARN_STEP);
+      if (bonus) toast(`Step done${bonus}`);
     }
   } else if (target.dataset.action === 'remove-step') task.steps = task.steps.filter(item => item.id !== target.closest('[data-step]').dataset.step);
   else if (target.dataset.action === 'delete-task') {
@@ -704,8 +715,10 @@ focus.addEventListener('click', event => {
       step.done = true;
       state.sparks += 1;
       markShowedUp();
+      const bonus = shield.earn(shield.EARN_STEP);
       save();
       react(focus, 'is-bounce');
+      if (bonus && task.steps.some(item => !item.done)) toast(`Step done${bonus}`);
       if (task.steps.every(item => item.done)) {
         complete(task);
         return hideFocus(true);
@@ -765,6 +778,7 @@ focus.querySelector('.park').addEventListener('submit', event => {
 /* ---------- Main interactions ---------- */
 app.addEventListener('click', event => {
   if (event.target.closest('.modal, .focus')) return;
+  if (shield.handle(event)) return;
   const tab = event.target.closest('.tab');
   if (tab) return go(tab.dataset.view);
   const goTo = event.target.closest('[data-view-go]');
@@ -861,6 +875,7 @@ app.addEventListener('click', event => {
   }
 });
 app.addEventListener('change', event => {
+  if (shield.toggle(event)) return;
   const setting = event.target.dataset.setting;
   if (!setting) return;
   if (setting === 'calm') state.settings.motion = !event.target.checked;
